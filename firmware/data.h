@@ -264,13 +264,13 @@ inline void fill(PuppiObj &out, const HadCaloObj &src, pt_t puppiPt, puppiWgt_t 
 
 struct EGIsoEleParticle {
   pt_t hwPt;
-  etaphi_t hwEta;  // at calo face
-  etaphi_t hwPhi;
+  eta_t hwEta;  // at calo face
+  phi_t hwPhi;
   // uint16_t hwQual;
 
   // track parameters for electrons
-  etaphi_t hwVtxEta;
-  etaphi_t hwVtxPhi;
+  eta_t hwVtxEta;
+  phi_t hwVtxPhi;
   z0_t hwZ0;
   bool hwCharge;
   // uint16_t hwIso;
@@ -284,8 +284,8 @@ inline void clear(EGIsoEleParticle & c) {
 
 struct EGIsoParticle {
   pt_t hwPt;
-  etaphi_t hwEta;  // at calo face
-  etaphi_t hwPhi;
+  eta_t hwEta;  // at calo face
+  phi_t hwPhi;
   // uint16_t hwQual;
   // uint16_t hwIso;
 };

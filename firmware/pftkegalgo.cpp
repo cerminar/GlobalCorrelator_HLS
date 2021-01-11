@@ -1,124 +1,16 @@
 #include "pftkegalgo.h"
 #include <cassert>
 
-// #include "pfalgo_common.icc"
+#include "pfalgo_common.icc"
 
-
-
-
-//----- BEGIN ---------------
-// FIXME: get all these from common once merged
-
-template<int N> struct ct_log2_ceil { enum { value = ct_log2_ceil<(N/2)+(N%2)>::value + 1 }; };
-template<> struct ct_log2_ceil<2> { enum { value = 1 }; };
-template<> struct ct_log2_ceil<1> { enum { value = 0 }; };
-
-template<typename DR_T, typename INDEX_T> struct match {
-    DR_T val; INDEX_T idx;
-    match(DR_T dr, int i) : val(dr), idx(i) {}
-    match() {}
-
-    static match best(const match & m1, const match & m2) {
-        #pragma HLS inline
-        return (m1.val <= m2.val) ? m1 : m2;
-    }
-};
-
-template<typename MATCH_T, int N> struct picker_of_closest {
-    static MATCH_T pick(const MATCH_T in[N]) {
-        #pragma HLS inline
-        static constexpr int halfWidth = N / 2;
-        static constexpr int reducedSize = halfWidth + N % 2;
-        MATCH_T reduced[reducedSize];
-        #pragma HLS ARRAY_PARTITION variable=reduced complete
-        for (int i = 0; i < halfWidth; ++i) {
-            #pragma HLS unroll
-            reduced[i] = MATCH_T::best(in[2*i], in[2*i+1]);
-        }
-        if (halfWidth != reducedSize) {
-            reduced[reducedSize - 1] = in[N - 1];
-        }
-        return picker_of_closest<MATCH_T,reducedSize>::pick(reduced);
-    }
-};
-
-
-
-
-template<typename MATCH_T>
-struct picker_of_closest<MATCH_T,2> {
-    static MATCH_T pick(const MATCH_T vals[2]) {
-        #pragma HLS inline
-        return MATCH_T::best(vals[0],vals[1]);
-    }
-};
-
-template<typename MATCH_T>
-struct picker_of_closest<MATCH_T,1> {
-    static MATCH_T pick(const MATCH_T vals[1]) {
-        #pragma HLS inline
-        return vals[0];
-    }
-};
-
-
-template<int DR2MAX, int NCA, typename DR_T>
-ap_uint<NCA>  pick_closest(const DR_T calo_track_drval[NCA]) {
-    const DR_T eDR2MAX = DR2MAX;
-    typedef match<DR_T,ap_uint<ct_log2_ceil<NCA>::value>> match_t;
-    match_t candidates[NCA];
-    #pragma HLS ARRAY_PARTITION variable=candidates complete
-    for (int i = 0; i < NCA; ++i) {
-        candidates[i] = match_t(calo_track_drval[i], i);
-    }
-
-    match_t best = picker_of_closest<match_t, NCA>::pick(candidates);
-    ap_uint<NCA> calo_track_link_bit = 0;
-    calo_track_link_bit[best.idx] = (best.val >= eDR2MAX) ? 0 : 1;
-    return calo_track_link_bit;
-}
-
-
-template<typename T, int NIn, int NOut>
-void ptsort_hwopt(const T in[NIn], T out[NOut]) {
-    T tmp[NOut];
-    #pragma HLS ARRAY_PARTITION variable=tmp complete
-
-    for (int iout = 0; iout < NOut; ++iout) {
-        #pragma HLS unroll
-        tmp[iout].hwPt = 0;
-    }
-
-    for (int it = 0; it < NIn; ++it) {
-        for (int iout = NOut-1; iout >= 0; --iout) {
-            if (tmp[iout].hwPt <= in[it].hwPt) {
-                if (iout == 0 || tmp[iout-1].hwPt > in[it].hwPt) {
-                    tmp[iout] = in[it];
-                } else {
-                    tmp[iout] = tmp[iout-1];
-                }
-            }
-        }
-
-    }
-    for (int iout = 0; iout < NOut; ++iout) {
-        out[iout] = tmp[iout];
-    }
-
-}
-
-
-//-------- END
-
-
-ap_int<pt_t::width+1> ell_dpt_int_cap(etaphi_t eta1, etaphi_t phi1, etaphi_t eta2, etaphi_t phi2, pt_t pt1, pt_t pt2, ap_int<pt_t::width+1> max) {
+ap_int<pt_t::width+1> ell_dpt_int_cap(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2, pt_t pt1, pt_t pt2, ap_int<pt_t::width+1> max) {
 #pragma HLS INLINE
    // FIXME: this should be configurable
     const ap_uint<10> cdeta = 16;
     const ap_uint<10> cm = 256;
 
-    ap_int<etaphi_t::width+1> d_eta = (eta1-eta2);
-    ap_int<etaphi_t::width+1> d_phi = (phi1-phi2);
+    ap_int<eta_t::width+1> d_eta = (eta1-eta2);
+    ap_int<phi_t::width+1> d_phi = (phi1-phi2);
 
     int ell = d_phi*d_phi + d_eta*d_eta*cdeta;
     // FIXME: should be ap_uint<pt_t::width> ?
@@ -156,8 +48,8 @@ void link_emCalo2emCalo(const EmCaloObj emcalo[NEMCALOSEL_EGIN], ap_uint<NEMCALO
   #pragma HLS INLINE
 
   // FIXME: configuration
-  const ap_int<etaphi_t::width+1>  dEtaMaxBrem_ = 5; // 0.02; -> round(0.02*4*180/3.14)
-  const ap_int<etaphi_t::width+1>  dPhiMaxBrem_ = 23; // 0.1; -> round(0.1*4*180/3.14)
+  const ap_int<eta_t::width+1>  dEtaMaxBrem_ = 5; // 0.02; -> round(0.02*4*180/3.14)
+  const ap_int<phi_t::width+1>  dPhiMaxBrem_ = 23; // 0.1; -> round(0.1*4*180/3.14)
 
   // NOTE: we assume the input to be sorted!!!
   brem_reco_outer_loop: for (int ic = 0; ic < NEMCALOSEL_EGIN; ++ic) {
@@ -260,9 +152,13 @@ void pftkegalgo(const EmCaloObj emcalo[NCALO], const TkObj track[NTRACK],
   #pragma HLS ARRAY_PARTITION variable=photons_temp complete dim=1
   #pragma HLS ARRAY_PARTITION variable=eles_temp complete dim=1
 
+  int track_id = -1;
   loop_calo: for (int ic = 0; ic < NEMCALOSEL_EGIN; ++ic) {
     loop_track_matched: for(int it = 0; it < NTRACK; ++it) {
-      if(emCalo2tk_bit[ic][it]) break;
+      if(emCalo2tk_bit[ic][it]) {
+        track_id = it;
+        break;
+      }
     }
 
     pt_t ptcorr = emcalo_sel[ic].hwPt;
@@ -286,6 +182,7 @@ void pftkegalgo(const EmCaloObj emcalo[NCALO], const TkObj track[NTRACK],
       eles_temp[ic].hwEta = emcalo_sel[ic].hwEta;
       eles_temp[ic].hwPhi = emcalo_sel[ic].hwPhi;
       // FIXME: add track properties @ vertex using
+        eles_temp[ic].hwZ0 = track[track_id].hwZ0;
       //track[it]
     } else {
       clear(eles_temp[ic]);

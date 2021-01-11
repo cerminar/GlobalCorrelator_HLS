@@ -99,7 +99,7 @@ void PFTkEGAlgo::link_emCalo2tk(const std::vector<l1tpf_impl::CaloCluster> &emca
         continue;
 
       if (debug_ > 10) {
-        std::cout << "[REF] tk [" << itk << " tk: pt: " << tk.floatPt() << " eta: " << tk.floatEta() << " phi: " << tk.floatPhi()
+        std::cout << "[REF] tk [" << itk << "] tk: pt: " << tk.floatPt() << " eta: " << tk.floatEta() << " phi: " << tk.floatPhi() << " z0: " << tk.hwZ0
         << std::endl;
       }
 
@@ -119,7 +119,7 @@ void PFTkEGAlgo::link_emCalo2tk(const std::vector<l1tpf_impl::CaloCluster> &emca
           std::cout << "[REF] EM calo [" << ic << "] hwFlags: " << calo.hwFlags << std::endl;
           std::cout << "--- calo: pt: " << calo.floatPt() << " eta: " << calo.floatEta() << " phi: " << calo.floatPhi()
                     << std::endl;
-          std::cout << "[REF] tk [" << itk << " tk: pt: " << tk.floatPt() << " eta: " << tk.floatEta() << " phi: " << tk.floatPhi()
+          std::cout << "[REF] tk [" << itk << " tk: pt: " << tk.floatPt() << " eta: " << tk.floatEta() << " phi: " << tk.floatPhi() << " z0: " << tk.hwZ0
                     << std::endl;
                   }
           std::cout << "    pass elliptic " << std::endl;
@@ -273,7 +273,7 @@ void PFTkEGAlgo::eg_algo(Region &r,
       addEgObjsToPF(r, ic, calo.hwFlags, calo.hwPt, itk);
       continue;
     }
-    
+
     // check if the cluster has already been used in a brem reclustering
     if (emCalo2emCalo[ic] != -1)
       continue;
@@ -319,7 +319,7 @@ EGIsoEleParticle &PFTkEGAlgo::addEGIsoEleToPF(std::vector<EGIsoEleParticle> &ego
 
   // egiso.hwVtxEta = track.hwVtxEta;
   // egiso.hwVtxPhi = track.hwVtxPhi;
-  // egiso.hwZ0 = track.hwZ0;
+  egiso.hwZ0 = track.hwZ0;
   // egiso.hwCharge = track.hwCharge;
 
   // egiso.hwQual = hwQual;

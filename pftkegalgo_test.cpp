@@ -17,7 +17,8 @@ bool compare(const EGIsoEleParticle&ele1, const EGIsoEleParticle&ele2) {
   // FIXME: add other parameters
   return (ele1.hwPt == ele2.hwPt &&
           ele1.hwEta == ele2.hwEta &&
-          ele1.hwPhi == ele2.hwPhi);
+          ele1.hwPhi == ele2.hwPhi &&
+          ele1.hwZ0 == ele2.hwZ0);
 }
 
 bool compare(const EGIsoParticle&ele1, const EGIsoParticle&ele2) {
@@ -111,9 +112,10 @@ int main() {
         }
 
         for(int ic = 0; ic < NEMCALOSEL_EGIN; ic++) {
+          if(emCalo2emcalo_bit[ic][ic]) continue;
           for(int it = 0; it < NEMCALOSEL_EGIN; it++) {
             if(emCalo2emcalo_bit[ic][it])
-              emCalo2emcalo[ic] = it;
+              emCalo2emcalo[it] = ic;
           }
         }
 
@@ -148,6 +150,9 @@ int main() {
             if(!compare(egele_ref[it], egele[it])) {
               errors++;
               std::cout << "[" << it << "] REF ele pt: " << egele_ref[it].hwPt << " FW ele pt: " << egele[it].hwPt << std::endl;
+              std::cout << "    REF ele Z0: " << egele_ref[it].hwZ0 << " FW ele z0: " << egele[it].hwZ0 << std::endl;
+
+
             }
           }
         }

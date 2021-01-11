@@ -12,7 +12,7 @@ int main() {
     HumanReadablePatternSerializer debugHR("-", /*zerosuppress=*/true); // this will print on stdout, we'll use it for errors
 
     DiscretePFInputsReader inputs("TTbar_PU200_HGCal.dump");
-    
+
     // input TP objects
     HadCaloObj calo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; z0_t hwZPV;
     MuObj mu[NMU];
@@ -31,7 +31,7 @@ int main() {
     ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
     for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
 #endif
-    
+
     // -----------------------------------------
     // run multiple tests
     for (int test = 1; test <= NTEST; ++test) {
@@ -39,7 +39,7 @@ int main() {
         if (!inputs.nextRegion(calo, emcalo, track, mu, hwZPV)) break;
 
 #if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-        pfalgo2hgc_pack_in(calo, track, mu, packed_input); 
+        pfalgo2hgc_pack_in(calo, track, mu, packed_input);
         serPatternsIn(packed_input);
         packed_pfalgo2hgc(packed_input, packed_output);
         serPatternsOut(packed_output);
@@ -66,7 +66,7 @@ int main() {
         for (int i = 0; i < NMU; ++i) {
             if (!pf_equals(outmupf_ref[i], outmupf[i], "PF Muon", i)) errors++;
             if (outmupf_ref[i].hwPt > 0) { ntot++; nmu++; }
-        }        
+        }
 
         if (errors != 0) {
             printf("Error in computing test %d (%d)\n", test, errors);

@@ -12,11 +12,14 @@ typedef ap_int<11>  glbphi_t;
 typedef ap_int<5>  vtx_t;
 typedef ap_uint<3>  particleid_t;
 typedef ap_int<10> z0_t;  // 40cm / 0.1
-typedef ap_uint<9> puppiWgt_t; // 256 = 1.0 
+typedef ap_uint<9> puppiWgt_t; // 256 = 1.0
 typedef ap_uint<14> tk2em_dr_t;
 typedef ap_uint<14> tk2calo_dr_t;
 typedef ap_uint<10> em2calo_dr_t;
 typedef ap_uint<13> tk2calo_dq_t;
+// FIXME: randomly chosen
+typedef ap_uint<3>  hwflags_t;
+
 
 enum PID { PID_Charged=0, PID_Neutral=1, PID_Photon=2, PID_Electron=3, PID_Muon=4 };
 
@@ -27,11 +30,16 @@ enum PID { PID_Charged=0, PID_Neutral=1, PID_Photon=2, PID_Electron=3, PID_Muon=
     #define NMU 4
     #define NSELCALO 20
     #define NALLNEUTRALS NSELCALO
-    // dummy
-    #define NEMCALO 1
+    // FIXME: determine how big this needs to be
+    #define NEMCALO 20
     #define NPHOTON NEMCALO
     // not used but must be there because used in header files
     #define NNEUTRALS 1
+    // Configuration of EG algo follows
+    // FIXME: determine how big this needs to be
+    #define NEMCALOSEL_EGIN 10
+    #define DOBREMRECOVERY
+    #define NEM_EGOUT 5
 //--------------------------------
 #elif defined(REG_HGCalNoTK)
     #define NCALO 12
@@ -134,16 +142,18 @@ struct HadCaloObj : public CaloObj {
    	bool hwIsEM;
 };
 inline void clear(HadCaloObj & c) {
-    c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0; c.hwEmPt = 0; c.hwIsEM = 0; 
+    c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0; c.hwEmPt = 0; c.hwIsEM = 0;
 }
 
 struct EmCaloObj {
 	pt_t hwPt, hwPtErr;
 	eta_t hwEta; // relative to the region center, at calo
 	phi_t hwPhi; // relative to the region center, at calo
+  hwflags_t hwFlags;
+
 };
 inline void clear(EmCaloObj & c) {
-    c.hwPt = 0; c.hwPtErr = 0; c.hwEta = 0; c.hwPhi = 0; 
+    c.hwPt = 0; c.hwPtErr = 0; c.hwEta = 0; c.hwPhi = 0; c.hwFlags = 0;
 }
 
 
@@ -166,7 +176,7 @@ struct MuObj {
 	phi_t hwPhi; // relative to the region center, at calo
 };
 inline void clear(MuObj & c) {
-    c.hwPt = 0; c.hwPtErr = 0; c.hwEta = 0; c.hwPhi = 0; 
+    c.hwPt = 0; c.hwPtErr = 0; c.hwEta = 0; c.hwPhi = 0;
 }
 
 
@@ -189,7 +199,7 @@ struct PFNeutralObj {
 };
 
 inline void clear(PFNeutralObj & c) {
-    c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0; c.hwId = 0; 
+    c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0; c.hwId = 0;
 }
 
 struct PuppiObj {
@@ -199,29 +209,29 @@ struct PuppiObj {
 	particleid_t hwId;
 	ap_uint<12> hwData;
 
-        inline z0_t hwZ0() const { 
+        inline z0_t hwZ0() const {
             #ifndef __SYNTHESIS__
             assert(hwId == PID_Charged || hwId == PID_Electron || hwId == PID_Muon);
             #endif
-            return z0_t(hwData(9,0)); 
+            return z0_t(hwData(9,0));
         }
-        inline void setHwZ0(z0_t z0) { 
+        inline void setHwZ0(z0_t z0) {
             #ifndef __SYNTHESIS__
             assert(hwId == PID_Charged || hwId == PID_Electron || hwId == PID_Muon);
             #endif
-            hwData(9,0) = z0(9,0); 
+            hwData(9,0) = z0(9,0);
         }
-        inline puppiWgt_t hwPuppiW() const { 
+        inline puppiWgt_t hwPuppiW() const {
             #ifndef __SYNTHESIS__
             assert(hwId == PID_Neutral || hwId == PID_Photon);
             #endif
-            return puppiWgt_t(hwData(8,0)); 
+            return puppiWgt_t(hwData(8,0));
         }
-        inline void setHwPuppiW(puppiWgt_t w) { 
+        inline void setHwPuppiW(puppiWgt_t w) {
             #ifndef __SYNTHESIS__
             assert(hwId == PID_Neutral || hwId == PID_Photon);
             #endif
-            hwData(8,0) = w(8,0); 
+            hwData(8,0) = w(8,0);
         }
 };
 inline void clear(PuppiObj & c) {
@@ -252,9 +262,37 @@ inline void fill(PuppiObj &out, const HadCaloObj &src, pt_t puppiPt, puppiWgt_t 
     out.setHwPuppiW(puppiWgt);
 }
 
+struct EGIsoEleParticle {
+  pt_t hwPt;
+  etaphi_t hwEta;  // at calo face
+  etaphi_t hwPhi;
+  // uint16_t hwQual;
 
+  // track parameters for electrons
+  etaphi_t hwVtxEta;
+  etaphi_t hwVtxPhi;
+  z0_t hwZ0;
+  bool hwCharge;
+  // uint16_t hwIso;
+};
 
+inline void clear(EGIsoEleParticle & c) {
+    c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0;
+    c.hwVtxEta = 0; c.hwVtxPhi = 0; c.hwZ0=0;
+    c.hwCharge = false;
+}
 
+struct EGIsoParticle {
+  pt_t hwPt;
+  etaphi_t hwEta;  // at calo face
+  etaphi_t hwPhi;
+  // uint16_t hwQual;
+  // uint16_t hwIso;
+};
+
+inline void clear(EGIsoParticle & c) {
+    c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0;
+}
 
 //TMUX
 #define NETA_TMUX 2

@@ -128,6 +128,7 @@ namespace fw2dpf {
         out.hwPtErr = in.hwPtErr;
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
+        out.hwFlags = in.hwFlags;
         out.src = nullptr;
     }
     inline void convert(const MuObj & in, l1tpf_impl::Muon & out) {
@@ -143,7 +144,7 @@ namespace fw2dpf {
         for (unsigned int i = 0; i < NMAX; ++i) {
             if (in[i].hwPt > 0) convert(in[i], out);
         }
-    } 
+    }
     template<typename In>
     void convert(unsigned int NMAX, const In in[], std::vector<l1tpf_impl::PFParticle> &out) {
         for (unsigned int i = 0; i < NMAX; ++i) {
@@ -154,12 +155,12 @@ namespace fw2dpf {
         for (unsigned int i = 0; i < NMAX; ++i) {
             if (in[i].hwPt > 0) convert_puppi(in[i], nullptr, out);
         }
-    } 
+    }
     inline void convert_puppi(unsigned int NMAX, const PuppiObj in[], const std::vector<l1tpf_impl::PropagatedTrack> & srctracks, std::vector<l1tpf_impl::PFParticle> &out) {
         for (unsigned int i = 0; i < NMAX; ++i) {
             if (in[i].hwPt > 0) convert_puppi(in[i], &srctracks[i], out);
         }
-    } 
+    }
 
 
 
@@ -180,7 +181,7 @@ namespace fw2dpf {
             }
         }
     }
- 
+
 } // namespace
 
 #endif

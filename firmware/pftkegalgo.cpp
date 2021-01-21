@@ -1,6 +1,6 @@
 #include "pftkegalgo.h"
 #include <cassert>
-
+#include "hls_math.h"
 #include "pfalgo_common.icc"
 
 ap_int<pt_t::width+1> ell_dpt_int_cap(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2, pt_t pt1, pt_t pt2, ap_int<pt_t::width+1> max) {
@@ -13,8 +13,9 @@ ap_int<pt_t::width+1> ell_dpt_int_cap(eta_t eta1, phi_t phi1, eta_t eta2, phi_t 
     ap_int<phi_t::width+1> d_phi = (phi1-phi2);
 
     int ell = d_phi*d_phi + d_eta*d_eta*cdeta;
+        
     // FIXME: should be ap_uint<pt_t::width> ?
-    ap_int<pt_t::width+1> d_pt = abs(pt1 - pt2);
+    ap_int<pt_t::width+1> d_pt = hls::abs(pt1 - pt2);
     return (ell <= int(cm)) ? d_pt : max;
 }
 
@@ -57,8 +58,8 @@ void link_emCalo2emCalo(const EmCaloObj emcalo[NEMCALOSEL_EGIN], ap_uint<NEMCALO
     brem_reco_inner_loop: for (int jc = ic + 1; jc < NEMCALOSEL_EGIN; ++jc) {
       auto &otherCalo = emcalo[jc];
       if (calo.hwPt != 0 && otherCalo.hwPt != 0 &&
-        abs(otherCalo.hwEta - calo.hwEta) < dEtaMaxBrem_ &&
-          abs(otherCalo.hwPhi - calo.hwPhi) < dPhiMaxBrem_) {
+        hls::abs(otherCalo.hwEta - calo.hwEta) < dEtaMaxBrem_ &&
+          hls::abs(otherCalo.hwPhi - calo.hwPhi) < dPhiMaxBrem_) {
             emCalo2emcalo_bit[ic][jc] = 1;
             emCalo2emcalo_bit[jc][jc] = 1; // use diagonal bit to mark the cluster as already used
       }

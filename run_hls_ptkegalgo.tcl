@@ -3,7 +3,7 @@
 set pfBoard "none"
 #set pfBoard "VCU118"
 set pfReg "HGCal"
-set cflags "-std=c++0x -DREG_${pfReg} -DBOARD_${pfBoard}"
+set cflags "-std=c++0x -DREG_${pfReg} -DBOARD_${pfBoard} -DHLS_pipeline_II=4"
 
 # open the project, don't forget to reset
 open_project -reset "proj_tkeg${pfReg}_${pfBoard}"
@@ -20,7 +20,8 @@ add_files -tb ref/pftkegalgo_ref.cpp  -cflags "${cflags}"
 add_files -tb ref/pfalgo_common_ref.cpp  -cflags "${cflags}"
 add_files -tb utils/pattern_serializer.cpp -cflags "${cflags}"
 add_files -tb utils/test_utils.cpp -cflags "${cflags}"
-add_files -tb data/TTbar_PU200_HGCal.dump
+#add_files -tb data/TTbar_PU200_HGCal.dump
+add_files -tb data/DoubleElectron_PU200_HGCal.dump
 
 # reset the solution
 open_solution -reset "solution"

@@ -108,6 +108,11 @@ enum PID { PID_Charged=0, PID_Neutral=1, PID_Photon=2, PID_Electron=3, PID_Muon=
        #define NSELCALO 10
        #define NALLNEUTRALS (NPHOTON+NSELCALO)
        #define NNEUTRALS 25
+       // EG configuration
+       #define NEMCALOSEL_EGIN 10
+       // #define DOBREMRECOVERY
+       #define NEM_EGOUT 10
+
    #endif
 
 #endif // region

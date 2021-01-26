@@ -14,11 +14,9 @@
 
 int g_pftkegalgo_debug_ref_ = 0;
 
-using namespace PFTkEGAlgo;
-// void PFTkEGAlgo::initRegion(Region &r) const {
-//   // FIXME: assume imput is sorted already
-//   r.egobjs.clear();
-// }
+using namespace pFTkEGAlgo;
+
+
 float PFTkEGAlgo::deltaPhi(float phi1, float phi2) {
   // reduce to [-pi,pi]
   float x = phi1 - phi2;
@@ -31,11 +29,6 @@ float PFTkEGAlgo::deltaPhi(float phi1, float phi2) {
 
 void PFTkEGAlgo::link_emCalo2emCalo(const std::vector<l1tpf_impl::CaloCluster>& emcalo,
                         std::vector<int> &emCalo2emCalo) {
-  // FIXME: needs configuration
-  bool filterHwQuality_ = true;
-  int caloHwQual_ = 4;
-  float dEtaMaxBrem_ = 0.02;
-  float dPhiMaxBrem_ = 0.1;
   // NOTE: we assume the input to be sorted!!!
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
     auto &calo = emcalo[ic];
@@ -67,16 +60,6 @@ void PFTkEGAlgo::link_emCalo2tk(const std::vector<l1tpf_impl::CaloCluster> &emca
                                 const std::vector<l1tpf_impl::PropagatedTrack> &track,
                                 std::vector<int> &emCalo2tk) {
 
-
-
-
-  // FIXME: configuration
-  int caloHwQual_ = 4;
-  float dEtaMax = 0.0174533; // FIXME: should be 0.01 but it is too small give eta precision. We use  0.0174533 hwEta: 4
-  float dPhiMax = 0.07;
-  bool filterHwQuality_ = true;
-  int debug_ = 1;
-  float trkQualityPtMin_ = 10.;
   if (debug_ > 10)
     std::cout << "[link_emCalo2tk]" << std::endl;
 
@@ -105,6 +88,14 @@ void PFTkEGAlgo::link_emCalo2tk(const std::vector<l1tpf_impl::CaloCluster> &emca
 
       float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
       float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
+
+      auto eta_index =
+          std::distance(
+              absEtaBoundaries_.begin(),
+              std::lower_bound(absEtaBoundaries_.begin(), absEtaBoundaries_.end(), r.globalAbsEta(calo.floatEta()))) -
+          1;
+      float dEtaMax = dEtaValues_[eta_index];
+      float dPhiMax = dPhiValues_[eta_index];
 
       // if (debug_ > 0)
       //   std::cout << " deta: " << fabs(d_eta) << " dphi: " << d_phi
@@ -140,9 +131,9 @@ void PFTkEGAlgo::link_emCalo2tk(const std::vector<l1tpf_impl::CaloCluster> &emca
 
 
 
-void PFTkEGAlgo::pftkegalgo_ref_set_debug(int debug) { g_pftkegalgo_debug_ref_ = debug; }
+// void PFTkEGAlgo::pftkegalgo_ref_set_debug(int debug) { g_pftkegalgo_debug_ref_ = debug; }
 
-bool PFTkEGAlgo::hwpt_sort(const l1tpf_impl::CaloCluster &i, const l1tpf_impl::CaloCluster &j) {
+bool pFTkEGAlgo::hwpt_sort(const l1tpf_impl::CaloCluster &i, const l1tpf_impl::CaloCluster &j) {
   return (i.hwPt > j.hwPt);
 }
 
@@ -187,15 +178,9 @@ void PFTkEGAlgo::pftkegalgo_ref(const pftkegalgo_config &cfg,
                     EGIsoEleParticle egele_ref[]) {
 
   // printf("[pftkegalgo_ref]\n");
-
-  bool doBremRecovery_ = true;
   //     if (g_pftkegalgo_debug_ref_) {
   // #ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
-  PFTkEGAlgo::Region reg;
-
-  // std::vector<l1tpf_impl::PropagatedTrack> tracks;
-  // std::vector<l1tpf_impl::CaloCluster> emcalos;
-
+  pFTkEGAlgo::Region reg;
 
   for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (track[i].hwPt == 0) continue;
       l1tpf_impl::PropagatedTrack tk; fw2dpf::convert(track[i], tk);
@@ -254,10 +239,6 @@ void PFTkEGAlgo::pftkegalgo_ref(const pftkegalgo_config &cfg,
 void PFTkEGAlgo::eg_algo(Region &r,
                          const std::vector<int> &emCalo2emCalo,
                          const std::vector<int> &emCalo2tk) {
-
-  bool filterHwQuality_ = true;
-  int caloHwQual_ = 4;
-  bool doBremRecovery_ = true;
 
   for (int ic = 0, nc = r.emcalo.size(); ic < nc; ++ic) {
     auto &calo = r.emcalo[ic];

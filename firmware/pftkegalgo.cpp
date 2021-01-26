@@ -48,7 +48,6 @@ void link_emCalo2emCalo(const EmCaloObj emcalo[NEMCALOSEL_EGIN], ap_uint<NEMCALO
   #pragma HLS ARRAY_PARTITION variable=emCalo2emcalo_bit complete dim=1
   #pragma HLS INLINE
 
-  // FIXME: configuration
   const ap_int<eta_t::width+1>  dEtaMaxBrem_ = 5; // 0.02; -> round(0.02*4*180/3.14)
   const ap_int<phi_t::width+1>  dPhiMaxBrem_ = 23; // 0.1; -> round(0.1*4*180/3.14)
 
@@ -90,44 +89,54 @@ void link_emCalo2tk(const EmCaloObj emcalo[NEMCALOSEL_EGIN],
 
 }
 
-
+#if defined(REG_HGCal)
 void sel_emCalo(const EmCaloObj emcalo[NEMCALO], EmCaloObj emcalo_sel[NEMCALOSEL_EGIN]) {
   #pragma HLS INLINE
 
-  EmCaloObj emcalo_selt[NEMCALO];
+  EmCaloObj emcalo_sel_temp[NEMCALO];
   #pragma HLS ARRAY_PARTITION variable=emcalo_sel complete dim=1
-  #pragma HLS ARRAY_PARTITION variable=emcalo_selt complete dim=1
+  #pragma HLS ARRAY_PARTITION variable=emcalo_sel_temp complete dim=1
   EmCaloObj emcalo_zero;
   clear(emcalo_zero);
   in_select_loop: for(int ic = 0; ic < NEMCALO; ++ic) {
-    emcalo_selt[ic] = (emcalo[ic].hwFlags == SELHWQUAL) ? emcalo[ic] : emcalo_zero;
+    emcalo_sel_temp[ic] = (emcalo[ic].hwFlags == 4) ? emcalo[ic] : emcalo_zero;
   }
-  ptsort_hwopt<EmCaloObj,NEMCALO,NEMCALOSEL_EGIN>(emcalo_selt, emcalo_sel);
+  ptsort_hwopt<EmCaloObj,NEMCALO,NEMCALOSEL_EGIN>(emcalo_sel_temp, emcalo_sel);
 }
+#endif
+
+
+#if defined(REG_Barrel)
+// NOTE: for now this is a placeholder more than anything else
+void sel_emCalo(const EmCaloObj emcalo[NEMCALO], EmCaloObj emcalo_sel[NEMCALOSEL_EGIN]) {
+  #pragma HLS INLINE
+
+  EmCaloObj emcalo_sel_temp[NEMCALO];
+  #pragma HLS ARRAY_PARTITION variable=emcalo_sel complete dim=1
+  #pragma HLS ARRAY_PARTITION variable=emcalo_sel_temp complete dim=1
+  EmCaloObj emcalo_zero;
+  clear(emcalo_zero);
+  in_select_loop: for(int ic = 0; ic < NEMCALO; ++ic) {
+    // we require pt>2GeV
+    emcalo_sel_temp[ic] = (emcalo[ic].hwPt > 8) ? emcalo[ic] : emcalo_zero;
+  }
+  ptsort_hwopt<EmCaloObj,NEMCALO,NEMCALOSEL_EGIN>(emcalo_sel_temp, emcalo_sel);
+}
+#endif
+
 
 
 void pftkegalgo(const EmCaloObj emcalo[NCALO], const TkObj track[NTRACK],
-  // ap_uint<NTRACK> emCalo2tk_bit[NEMCALOSEL_EGIN], ap_uint<NEMCALOSEL_EGIN> emCalo2emcalo_bit[NEMCALOSEL_EGIN],
   EGIsoParticle photons[NEM_EGOUT], EGIsoEleParticle eles[NEM_EGOUT]) {
-  #pragma HLS PIPELINE II=1
+  #pragma HLS PIPELINE II=HLS_pipeline_II
   #pragma HLS ARRAY_PARTITION variable=emcalo complete dim=1
   #pragma HLS ARRAY_PARTITION variable=track complete dim=1
 
   #pragma HLS ARRAY_PARTITION variable=photons complete dim=1
   #pragma HLS ARRAY_PARTITION variable=eles complete dim=1
 
-  // FIXME: filter out qualities which are not useful for later processing (eg quality !=4 in HGC)
-  // EmCaloObj emcalo_sel[NEMCALOSEL_EGIN];
   EmCaloObj emcalo_sel[NEMCALOSEL_EGIN];
-  EmCaloObj emcalo_selt[NEMCALO];
-  #pragma HLS ARRAY_PARTITION variable=emcalo_sel complete dim=1
-  #pragma HLS ARRAY_PARTITION variable=emcalo_selt complete dim=1
-  EmCaloObj emcalo_zero;
-  clear(emcalo_zero);
-  in_select_loop: for(int ic = 0; ic < NEMCALO; ++ic) {
-    emcalo_selt[ic] = (emcalo[ic].hwFlags == SELHWQUAL) ? emcalo[ic] : emcalo_zero;
-  }
-  ptsort_hwopt<EmCaloObj,NEMCALO,NEMCALOSEL_EGIN>(emcalo_selt, emcalo_sel);
+  sel_emCalo(emcalo, emcalo_sel);
 
   // FIXME: shall we forseen the same selection step for tracks?
   ap_uint<NTRACK> emCalo2tk_bit[NEMCALOSEL_EGIN];
@@ -182,9 +191,8 @@ void pftkegalgo(const EmCaloObj emcalo[NCALO], const TkObj track[NTRACK],
       eles_temp[ic].hwPt = ptcorr;
       eles_temp[ic].hwEta = emcalo_sel[ic].hwEta;
       eles_temp[ic].hwPhi = emcalo_sel[ic].hwPhi;
-      // FIXME: add track properties @ vertex using
-        eles_temp[ic].hwZ0 = track[track_id].hwZ0;
-      //track[it]
+      // FIXME: add track properties @ vertex using track[track_id]
+      eles_temp[ic].hwZ0 = track[track_id].hwZ0;
     } else {
       clear(eles_temp[ic]);
     }

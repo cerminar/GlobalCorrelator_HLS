@@ -43,8 +43,9 @@ int main() {
     PFNeutralObj outne[NSELCALO], outne_ref[NSELCALO];
     PFChargedObj outmupf[NMU], outmupf_ref[NMU];
 
-    PFTkEGAlgo::pftkegalgo_config cfg(NTRACK, NEMCALO, NEMCALOSEL_EGIN, NEM_EGOUT);
-
+    pFTkEGAlgo::pftkegalgo_config cfg(NTRACK, NEMCALO, NEMCALOSEL_EGIN, NEM_EGOUT, true, true);
+    
+    pFTkEGAlgo::PFTkEGAlgo algo(cfg);
     // -----------------------------------------
     // run multiple tests
     int passed_tests = 0;
@@ -67,7 +68,7 @@ int main() {
         EmCaloObj emcalo_sel[NEMCALOSEL_EGIN];
         EmCaloObj emcalo_sel_ref[NEMCALOSEL_EGIN];
         sel_emCalo(emcalo, emcalo_sel);
-        PFTkEGAlgo::sel_emCalo_ref(emcalo, emcalo_sel_ref);
+        algo.sel_emCalo_ref(emcalo, emcalo_sel_ref);
 
 
         // FIXME: determine output depth
@@ -87,7 +88,7 @@ int main() {
         // pftkegalgo(emcalo, track);
         EGIsoParticle egphs_ref[NEM_EGOUT];
         EGIsoEleParticle egele_ref[NEM_EGOUT];
-        PFTkEGAlgo::pftkegalgo_ref(cfg, emcalo_sel_ref, track, emCalo2tk_ref, emCalo2emcalo_ref, egphs_ref, egele_ref);
+        algo.pftkegalgo_ref(cfg, emcalo_sel_ref, track, emCalo2tk_ref, emCalo2emcalo_ref, egphs_ref, egele_ref);
 
         ap_uint<NTRACK> emCalo2tk_bit[NEMCALOSEL_EGIN];
         ap_uint<NEMCALOSEL_EGIN> emCalo2emcalo_bit[NEMCALOSEL_EGIN];
@@ -151,8 +152,6 @@ int main() {
               errors++;
               std::cout << "[" << it << "] REF ele pt: " << egele_ref[it].hwPt << " FW ele pt: " << egele[it].hwPt << std::endl;
               std::cout << "    REF ele Z0: " << egele_ref[it].hwZ0 << " FW ele z0: " << egele[it].hwZ0 << std::endl;
-
-
             }
           }
         }

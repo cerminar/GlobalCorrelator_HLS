@@ -1,18 +1,6 @@
 #ifndef FIRMWARE_PFTKEGALGO_H
 #define FIRMWARE_PFTKEGALGO_H
 
-// FIXME: move to data.h
-// FIXME: tune on the basis of the region occupancy
-// FIXME: this needs to go somewhere else
-#define SELHWQUAL 4
-
-#ifndef REG_HGCal
-
-  #ifndef CMSSW_GIT_HASH
-    #warning "REG_HGCal is not #defined, but this algorithm has only been tested there"
-  #endif
-#endif
-
 #include "pfalgo_common.h"
 #include "data.h"
 

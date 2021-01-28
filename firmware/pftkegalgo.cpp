@@ -150,7 +150,22 @@ void sel_emCalo(const EmCaloObj emcalo[NEMCALO], EmCaloObj emcalo_sel[NEMCALOSEL
 
 void pftkegalgo(const EmCaloObj emcalo[NCALO], const TkObj track[NTRACK],
   EGIsoParticle photons[NEM_EGOUT], EGIsoEleParticle eles[NEM_EGOUT]) {
-  #pragma HLS PIPELINE II=HLS_pipeline_II
+    #ifdef HLS_pipeline_II
+     #if HLS_pipeline_II == 1
+        #pragma HLS pipeline II=1
+     #elif HLS_pipeline_II == 2
+        #pragma HLS pipeline II=2
+     #elif HLS_pipeline_II == 3
+        #pragma HLS pipeline II=3
+     #elif HLS_pipeline_II == 4
+        #pragma HLS pipeline II=4
+     #elif HLS_pipeline_II == 6
+        #pragma HLS pipeline II=6
+     #endif
+    #else
+        #pragma HLS pipeline II=2
+    #endif
+  // #pragma HLS PIPELINE II=HLS_pipeline_II
   #pragma HLS ARRAY_PARTITION variable=emcalo complete dim=1
   #pragma HLS ARRAY_PARTITION variable=track complete dim=1
 

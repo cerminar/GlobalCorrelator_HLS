@@ -5,15 +5,38 @@
 
 ap_int<pt_t::width+1> ell_dpt_int_cap(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2, pt_t pt1, pt_t pt2, ap_int<pt_t::width+1> max) {
 #pragma HLS INLINE
-   // FIXME: this should be configurable
-    const ap_uint<10> cdeta = 16;
+
+#if defined(REG_HGCal)
+    // const ap_uint<10> cdeta_int = 16;
+    const ap_ufixed<12,10> cdeta = 16;
+#endif
+
+#if defined(REG_Barrel)
+    // const ap_uint<10> cdeta_int = (hls::abs(eta1) > 3) ? 22 : 8;
+    // //FIXME: global absolute eta > 0.9 
+    // const ap_ufixed<10,12> cdeta = (hls::abs(eta1) > 3) ? 21.75 : 7.75;
+    // const ap_uint<10> cdeta = 22;
+    const ap_ufixed<12,10> cdeta =  21.75;
+#endif
+
     const ap_uint<10> cm = 256;
+    // const ap_uint<10> cm_int = 256;
+
 
     ap_int<eta_t::width+1> d_eta = (eta1-eta2);
     ap_int<phi_t::width+1> d_phi = (phi1-phi2);
 
-    int ell = d_phi*d_phi + d_eta*d_eta*cdeta;
-        
+    // ap_uint<22> ell = d_phi*d_phi + d_eta*d_eta*cdeta;
+    ap_uint<22> ell = d_phi*d_phi + d_eta*d_eta*cdeta;
+    // int ell_int = d_phi*d_phi + d_eta*d_eta*cdeta_int;
+    // int pippo = d_eta*d_eta*cdeta;
+    // int pippo2 = d_eta*d_eta*cdeta_int;
+
+    // std::cout << "cdeta: " << cdeta <<std::endl;
+    // std::cout << "d_eta: " << d_eta << " d_eta*d_eta: " << d_eta*d_eta << " d_eta*d_eta*cdeta: " << d_eta*d_eta*cdeta << " d_eta*d_eta*cdeta_int: "<< d_eta*d_eta*cdeta_int << std::endl;
+    // std::cout << "pippo: " << pippo << " pippo_int: "  << pippo2 << std::endl;
+    // std::cout << "d_phi: " << d_phi << "d_phi*d_phi: " << d_phi*d_phi << std::endl;
+    // std::cout << "ell: " << ell << " ell_int: " << ell_int << " eval: " << (ell <= cm) << " eval_int: " << (ell_int <= int(cm_int)) << std::endl;
     // FIXME: should be ap_uint<pt_t::width> ?
     ap_int<pt_t::width+1> d_pt = hls::abs(pt1 - pt2);
     return (ell <= int(cm)) ? d_pt : max;
@@ -23,10 +46,9 @@ ap_int<pt_t::width+1> ell_dpt_int_cap(eta_t eta1, phi_t phi1, eta_t eta2, phi_t 
 
 template<int DPTMAX>
 void calo2tk_ellipticdptvals(const EmCaloObj &em, const TkObj track[NTRACK], ap_int<pt_t::width+1> calo_track_dptval[NTRACK]) {
-#pragma HLS INLINE
+// #pragma HLS INLINE
     // ap_int<pt_t::width+1>  ?
     // FIXME: uint<pt_t::width>
-    // FIXME: some of this should be configurable
     const ap_int<pt_t::width+1> eDPTMAX = DPTMAX;
     const pt_t trkQualityPtMin_ = 40; // 10 GeV
 

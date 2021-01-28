@@ -31,19 +31,30 @@ bool compare(const EGIsoParticle&ele1, const EGIsoParticle&ele2) {
 
 int main() {
     HumanReadablePatternSerializer debugHR("-", /*zerosuppress=*/true); // this will print on stdout, we'll use it for errors
+#if defined(REG_HGCal)
+std::cout << "REG_Hgcal" << std::endl;
 
     DiscretePFInputsReader inputs("DoubleElectron_PU200_HGCal.dump");
+    bool filterHwQuality = true;
+    bool doBremRecovery = true;
+#endif
 
+#if defined(REG_Barrel)
+std::cout << "REG_Barrel" << std::endl;
+    DiscretePFInputsReader inputs("DoubleElectron_PU200_Barrel.dump");
+    bool filterHwQuality = false;
+    bool doBremRecovery = false;
+#endif
     // input TP objects
     HadCaloObj calo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; z0_t hwZPV;
     MuObj mu[NMU];
-
+    float reg_eta_center;
     // output PF objects
     PFChargedObj outch[NTRACK], outch_ref[NTRACK];
     PFNeutralObj outne[NSELCALO], outne_ref[NSELCALO];
     PFChargedObj outmupf[NMU], outmupf_ref[NMU];
 
-    pFTkEGAlgo::pftkegalgo_config cfg(NTRACK, NEMCALO, NEMCALOSEL_EGIN, NEM_EGOUT, true, true);
+    pFTkEGAlgo::pftkegalgo_config cfg(NTRACK, NEMCALO, NEMCALOSEL_EGIN, NEM_EGOUT, filterHwQuality, doBremRecovery);
     
     pFTkEGAlgo::PFTkEGAlgo algo(cfg);
     // -----------------------------------------
@@ -55,7 +66,7 @@ int main() {
     for (int test = 1; test <= NTEST; ++test) {
       // std::cout << "------------ TEST: " << test << std::endl;
         // get the inputs from the input object
-        if (!inputs.nextRegion(calo, emcalo, track, mu, hwZPV)) break;
+        if (!inputs.nextRegion(calo, emcalo, track, mu, hwZPV, reg_eta_center)) break;
 
         // for(auto region: inputs.event().regions) {
         //   printf("# of EM objects: %u\n", region.emcalo.size());
@@ -63,7 +74,8 @@ int main() {
         //     printf("   - hwFlags: %u\n", emc.hwFlags);
         //   }
         // }
-
+        algo.setRegionEtaCenter(reg_eta_center);
+        std::cout<< "Region eta center: " <<   reg_eta_center << std::endl;      
         // 0 - input cluster selection
         EmCaloObj emcalo_sel[NEMCALOSEL_EGIN];
         EmCaloObj emcalo_sel_ref[NEMCALOSEL_EGIN];
@@ -100,7 +112,10 @@ int main() {
           emCalo2emcalo_bit[i] = 0;
         }
 
+        #ifndef REG_Barrel
         link_emCalo2emCalo(emcalo_sel, emCalo2emcalo_bit);
+        #endif
+        
         link_emCalo2tk(emcalo_sel, track, emCalo2tk_bit);
 
         pftkegalgo(emcalo, track, egphs, egele) ;

@@ -92,11 +92,12 @@ void PFTkEGAlgo::link_emCalo2tk(const std::vector<l1tpf_impl::CaloCluster> &emca
       auto eta_index =
           std::distance(
               absEtaBoundaries_.begin(),
-              std::lower_bound(absEtaBoundaries_.begin(), absEtaBoundaries_.end(), r.globalAbsEta(calo.floatEta()))) -
+              std::lower_bound(absEtaBoundaries_.begin(), absEtaBoundaries_.end(), globalAbsEta(calo.floatEta()))) -
           1;
       float dEtaMax = dEtaValues_[eta_index];
       float dPhiMax = dPhiValues_[eta_index];
-
+      
+      std::cout << "eta: " << calo.floatEta() << " globa eta: " << globalAbsEta(calo.floatEta()) << " deta_max: " << dEtaMax << " dphimax: " << dPhiMax << std::endl;
       // if (debug_ > 0)
       //   std::cout << " deta: " << fabs(d_eta) << " dphi: " << d_phi
       //             << " ell: " << ((d_phi / dPhiMax) * (d_phi / dPhiMax)) + ((d_eta / dEtaMax) * (d_eta / dEtaMax))

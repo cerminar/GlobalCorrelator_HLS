@@ -131,25 +131,60 @@ namespace l1ct {
     }
   };
 
-  struct EGIsoObjEmu : public EGIsoObj {
+  struct EGObjEmu : EGObj {
+    // FIXME: really needed? can not set compoments of Egamma objects...
+    std::vector<const l1t::PFCluster *> components;
+    void clear() {
+      EGObj::clear();
+      components.clear();
+    }
+  };
+
+  struct EGIsoVarsEmu {
+    iso_t hwIsoVars[4];
+
+    enum IsoType { TkIso = 0, PfIso = 1, TkIsoPV = 2, PfIsoPV = 3 };
+
+    int intIsoVar(const IsoType type) const { return hwIsoVars[type].to_int(); }
+    float floatIsoVar(const IsoType type) const { return Scales::floatIso(hwIsoVars[type]); }
+    void setHwIsoVar(const IsoType type, iso_t value) { hwIsoVars[type] = value; }
+    iso_t hwIsoVar(const IsoType type) const { return hwIsoVars[type]; }
+
+    void clear() {
+      hwIsoVars[0] = 0;
+      hwIsoVars[1] = 0;
+      hwIsoVars[2] = 0;
+      hwIsoVars[3] = 0;
+    }
+  };
+
+  struct EGIsoObjEmu : public EGIsoObj, public EGIsoVarsEmu {
     const l1t::PFCluster *srcCluster;
+    // we use an index to the standalone object needed to retrieve a Ref when putting
+    int sta_idx;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
     void clear() {
       EGIsoObj::clear();
       srcCluster = nullptr;
+      sta_idx = -1;
+      EGIsoVarsEmu::clear();
     }
   };
 
-  struct EGIsoEleObjEmu : public EGIsoEleObj {
+  struct EGIsoEleObjEmu : public EGIsoEleObj, public EGIsoVarsEmu {
     const l1t::PFCluster *srcCluster;
     const l1t::PFTrack *srcTrack;
+    // we use an index to the standalone object needed to retrieve a Ref when putting
+    int sta_idx;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
     void clear() {
       EGIsoEleObj::clear();
       srcCluster = nullptr;
       srcTrack = nullptr;
+      sta_idx = -1;
+      EGIsoVarsEmu::clear();
     }
   };
 
@@ -212,6 +247,7 @@ namespace l1ct {
     std::vector<PFNeutralObjEmu> pfneutral;
     std::vector<PFChargedObjEmu> pfmuon;
     std::vector<PuppiObjEmu> puppi;
+    std::vector<EGObjEmu> egsta;
     std::vector<EGIsoObjEmu> egphoton;
     std::vector<EGIsoEleObjEmu> egelectron;
 
@@ -221,7 +257,7 @@ namespace l1ct {
   };
 
   struct Event {
-    static const int VERSION = 3;
+    static const int VERSION = 4;
     uint32_t run, lumi;
     uint64_t event;
     RegionizerDecodedInputs decoded;
